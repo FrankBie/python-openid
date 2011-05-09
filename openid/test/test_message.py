@@ -858,6 +858,29 @@ class MessageTest(unittest.TestCase):
         self._checkForm(html, m, self.action_url,
                         self.form_tag_attrs, self.submit_text)
 
+    def test_toFormMarkup_bug_with_utf8_values(self):
+        postargs = {
+            'openid.ns': message.OPENID2_NS,
+            'openid.mode': 'checkid_setup',
+            'openid.identity': 'http://bogus.example.invalid:port/',
+            'openid.assoc_handle': 'FLUB',
+            'openid.return_to': 'Neverland',
+            'ünicöde_key' : 'ünicöde_välüe',
+            }
+        m = message.Message.fromPostArgs(postargs)
+        # Calling m.toFormMarkup with lxml used for ElementTree will throw
+        # a ValueError.
+        html = m.toFormMarkup(self.action_url, self.form_tag_attrs,
+                              self.submit_text)
+        # Using the (c)ElementTree from stdlib will result in the UTF-8
+        # encoded strings to be converted to XML character references,
+        # "ünicöde_key" becomes "&#195;&#188;nic&#195;&#182;de_key" and
+        # "ünicöde_välüe" becomes "&#195;&#188;nic&#195;&#182;de_v&#195;&#164;l&#195;&#188;e"
+        self.failIf('&#195;&#188;nic&#195;&#182;de_key' in html,
+                    'UTF-8 bytes should not convert to XML character references')
+        self.failIf('&#195;&#188;nic&#195;&#182;de_v&#195;&#164;l&#195;&#188;e' in html,
+                    'UTF-8 bytes should not convert to XML character references')
+
     def test_overrideMethod(self):
         """Be sure that caller cannot change form method to GET."""
         m = message.Message.fromPostArgs(self.postargs)
