@@ -1781,6 +1781,16 @@ class TestServer(unittest.TestCase, CatchLogs):
         request = server.CheckAuthRequest('arrrrrf', '0x3999', [])
         response = self.server.openid_check_authentication(request)
         self.failUnless(response.fields.hasKey(OPENID_NS, "is_valid"))
+        
+    def test_missingAssocTypeOpenID2(self):
+        """Make sure assoc_type is required in OpenID 2"""
+        msg = Message.fromPostArgs({
+            'openid.ns': OPENID2_NS,
+            'openid.session_type': 'no-encryption',
+            })
+        self.assertRaises(server.ProtocolError,
+                          server.AssociateRequest.fromMessage, msg)
+
 
 class TestSignatory(unittest.TestCase, CatchLogs):
     def setUp(self):
